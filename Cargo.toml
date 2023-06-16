@@ -1,0 +1,27 @@
+[package]
+name = "rusty-cache"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+#lazy_static = "1.4.0"
+#rocket = "=0.5.0-rc.3"
+#rocket_contrib = "0.4.11"
+#serde = { version = "1.0", features = ["derive"] }
+#tokio = { version = "1", features = ["full"] }
+#warp = "0.3"
+warp = "0.3.5"
+parking_lot = "0.12.1"
+serde = { version = "1.0", features = ["derive"] }
+tokio = { version = "1.28.2", features = ["macros", "rt-multi-thread"] }
+#pretty_env_logger = "0.5.0"
+#log = "0.4.19"
+
+
+#[profile.release]
+#debug = 1
+
+#[rust]
+#debuginfo-level = 1
