@@ -1,8 +1,8 @@
-use warp::{http, Filter};
 use parking_lot::RwLock;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
-use serde::{Serialize, Deserialize};
+use warp::{http, Filter};
 
 type Items = HashMap<String, String>;
 
@@ -14,12 +14,12 @@ struct Id {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 struct Item {
     name: String,
-    value: String
+    value: String,
 }
 
 #[derive(Clone)]
 struct Store {
-  cache_list: Arc<RwLock<Items>>
+    cache_list: Arc<RwLock<Items>>,
 }
 
 impl Store {
@@ -30,60 +30,44 @@ impl Store {
     }
 }
 
-async fn update_cache_list(
-    item: Item,
-    store: Store
-    ) -> Result<impl warp::Reply, warp::Rejection> {
-        store.cache_list.write().insert(item.name, item.value);
+async fn update_cache_list(item: Item, store: Store) -> Result<impl warp::Reply, warp::Rejection> {
+    store.cache_list.write().insert(item.name, item.value);
 
-
-        Ok(warp::reply::with_status(
-            "Added items to the cache",
-            http::StatusCode::CREATED,
-        ))
+    Ok(warp::reply::with_status(
+        "Added items to the cache",
+        http::StatusCode::CREATED,
+    ))
 }
 
-async fn delete_cache_list_item(
-    id: Id,
-    store: Store
-    ) -> Result<impl warp::Reply, warp::Rejection> {
-        store.cache_list.write().remove(&id.name);
+async fn delete_cache_list_item(id: Id, store: Store) -> Result<impl warp::Reply, warp::Rejection> {
+    store.cache_list.write().remove(&id.name);
 
-
-        Ok(warp::reply::with_status(
-            "Removed item from cache list",
-            http::StatusCode::OK,
-        ))
+    Ok(warp::reply::with_status(
+        "Removed item from cache list",
+        http::StatusCode::OK,
+    ))
 }
 
-async fn clear_cache_list(
-    store: Store
-    ) -> Result<impl warp::Reply, warp::Rejection> {
-        store.cache_list.write().clear();
-        // this shrinks the hashmap back to 0, this maybe good to free up memory but it may also impact
-        // performance at larger scale with lots of insertions. 
-        store.cache_list.write().shrink_to(0);
+async fn clear_cache_list(store: Store) -> Result<impl warp::Reply, warp::Rejection> {
+    store.cache_list.write().clear();
+    // this shrinks the hashmap back to 0, this maybe good to free up memory but it may also impact
+    // performance at larger scale with lots of insertions.
+    store.cache_list.write().shrink_to(0);
 
-
-        Ok(warp::reply::with_status(
-            "Cache has been cleared",
-            http::StatusCode::OK,
-        ))
+    Ok(warp::reply::with_status(
+        "Cache has been cleared",
+        http::StatusCode::OK,
+    ))
 }
 
-async fn get_cache_list(
-    store: Store
-    ) -> Result<impl warp::Reply, warp::Rejection> {
-        let r = store.cache_list.read();
-        Ok(warp::reply::json(&*r))
+async fn get_cache_list(store: Store) -> Result<impl warp::Reply, warp::Rejection> {
+    let r = store.cache_list.read();
+    Ok(warp::reply::json(&*r))
 }
 
-async fn get_cache_item(
-    id: Id,
-    store: Store
-    ) -> Result<impl warp::Reply, warp::Rejection> {
-        let r = store.cache_list.read().clone();
-        Ok(warp::reply::json(&r.get(&id.name)))
+async fn get_cache_item(id: Id, store: Store) -> Result<impl warp::Reply, warp::Rejection> {
+    let r = store.cache_list.read().clone();
+    Ok(warp::reply::json(&r.get(&id.name)))
 }
 
 fn get_json() -> impl Filter<Extract = (Id,), Error = warp::Rejection> + Clone {
@@ -141,7 +125,6 @@ async fn main() {
         .and(store_filter.clone())
         .and_then(get_cache_list);
 
-
     let delete_item = warp::delete()
         .and(warp::path("v1"))
         .and(warp::path("cache"))
@@ -149,7 +132,6 @@ async fn main() {
         .and(delete_json())
         .and(store_filter.clone())
         .and_then(delete_cache_list_item);
-
 
     let update_item = warp::put()
         .and(warp::path("v1"))
@@ -159,9 +141,12 @@ async fn main() {
         .and(store_filter.clone())
         .and_then(update_cache_list);
 
-    let routes = add_items.or(get_items).or(delete_item).or(update_item).or(clear_cache).or(get_item);
+    let routes = add_items
+        .or(get_items)
+        .or(delete_item)
+        .or(update_item)
+        .or(clear_cache)
+        .or(get_item);
 
-    warp::serve(routes)
-        .run(([10,10,30,119], 3030))
-        .await;
+    warp::serve(routes).run(([0, 0, 0, 0], 3030)).await;
 }
